@@ -59,7 +59,8 @@ export default function Dashboard({
           <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
             <div className="text-xs text-slate-500">Official schedule</div>
             <div className="mt-1 text-lg font-bold">
-              {settings.schedule.startTime} – {settings.schedule.endTime}
+              {settings.schedule.morningStart} – {settings.schedule.morningEnd} /{" "}
+              {settings.schedule.afternoonStart} – {settings.schedule.afternoonEnd}
             </div>
           </div>
         </div>

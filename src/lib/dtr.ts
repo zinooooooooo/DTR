@@ -9,15 +9,31 @@ export type ComputedEntry = {
 };
 
 export function computeEntry(entry: DtrEntry, settings: AppSettings): ComputedEntry {
-  const totalMinutes = clampNonNegative(diffMinutes(entry.timeIn, entry.timeOut));
+  const mMinutes = clampNonNegative(diffMinutes(entry.morningIn, entry.morningOut));
+  const aMinutes =
+    entry.afternoonIn && entry.afternoonOut
+      ? clampNonNegative(diffMinutes(entry.afternoonIn, entry.afternoonOut))
+      : 0;
+  const totalMinutes = mMinutes + aMinutes;
 
-  const officialStart = minutesFromHHMM(settings.schedule.startTime);
-  const officialEnd = minutesFromHHMM(settings.schedule.endTime);
-  const timeInM = minutesFromHHMM(entry.timeIn);
-  const timeOutM = minutesFromHHMM(entry.timeOut);
+  const mStart = minutesFromHHMM(settings.schedule.morningStart);
+  const mEnd = minutesFromHHMM(settings.schedule.morningEnd);
+  const aStart = minutesFromHHMM(settings.schedule.afternoonStart);
+  const aEnd = minutesFromHHMM(settings.schedule.afternoonEnd);
 
-  const lateMinutes = clampNonNegative(timeInM - officialStart);
-  const overtimeMinutes = clampNonNegative(timeOutM - officialEnd);
+  const mIn = minutesFromHHMM(entry.morningIn);
+  const mOut = minutesFromHHMM(entry.morningOut);
+  const aIn = entry.afternoonIn ? minutesFromHHMM(entry.afternoonIn) : null;
+  const aOut = entry.afternoonOut ? minutesFromHHMM(entry.afternoonOut) : null;
+
+  const lateMinutes =
+    clampNonNegative(mIn - mStart) + (aIn != null ? clampNonNegative(aIn - aStart) : 0);
+
+  // Overtime is measured against the session end that exists.
+  const overtimeMinutes =
+    aOut != null
+      ? clampNonNegative(aOut - aEnd)
+      : clampNonNegative(mOut - mEnd);
 
   const status: ComputedEntry["status"] =
     overtimeMinutes > 0 ? "Overtime" : lateMinutes > 0 ? "Late" : "On Time";

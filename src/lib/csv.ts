@@ -12,8 +12,10 @@ function csvEscape(value: string): string {
 export function entriesToCsv(entries: DtrEntry[], settings: AppSettings): string {
   const header = [
     "Date",
-    "Time In",
-    "Time Out",
+    "Morning In",
+    "Morning Out",
+    "Afternoon In",
+    "Afternoon Out",
     "Total Hours",
     "Overtime Hours",
     "Status",
@@ -26,8 +28,10 @@ export function entriesToCsv(entries: DtrEntry[], settings: AppSettings): string
     const otH = c.overtimeMinutes / 60;
     return [
       csvEscape(e.date),
-      csvEscape(e.timeIn),
-      csvEscape(e.timeOut),
+      csvEscape(e.morningIn),
+      csvEscape(e.morningOut),
+      csvEscape(e.afternoonIn ?? ""),
+      csvEscape(e.afternoonOut ?? ""),
       csvEscape(formatHours(totalH)),
       csvEscape(formatHours(otH)),
       csvEscape(c.status),

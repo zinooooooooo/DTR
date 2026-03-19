@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { AppSettings, DtrEntry } from "../types";
 import { computeEntry } from "../lib/dtr";
 import { formatHours, formatHMFromMinutes } from "../lib/time";
-import { Badge, Button, Card, Input } from "./ui";
+import { Badge, Button, Card, Input, Select } from "./ui";
 
 function toneForStatus(status: "On Time" | "Late" | "Overtime") {
   if (status === "On Time") return "green" as const;
@@ -10,7 +10,10 @@ function toneForStatus(status: "On Time" | "Late" | "Overtime") {
   return "red" as const;
 }
 
-type EditDraft = Pick<DtrEntry, "id" | "date" | "timeIn" | "timeOut"> & {
+type EditDraft = Pick<
+  DtrEntry,
+  "id" | "date" | "morningIn" | "morningOut" | "afternoonIn" | "afternoonOut"
+> & {
   note: string;
 };
 
@@ -25,19 +28,30 @@ export default function DTRTable({
   settings: AppSettings;
   onDelete: (id: string) => void;
   onUpdate: (next: DtrEntry) => void;
-  onExportCsv: () => void;
+  onExportCsv: (entries: DtrEntry[]) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [month, setMonth] = useState<string>("all");
   const [editing, setEditing] = useState<EditDraft | null>(null);
+
+  const monthOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of entries) {
+      if (typeof e.date === "string" && e.date.length >= 7) set.add(e.date.slice(0, 7)); // YYYY-MM
+    }
+    return [...set].sort((a, b) => (a < b ? 1 : -1));
+  }, [entries]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return entries;
     return entries.filter((e) => {
-      const blob = `${e.date} ${e.timeIn} ${e.timeOut} ${e.note ?? ""}`.toLowerCase();
+      if (month !== "all" && !e.date.startsWith(month)) return false;
+      if (!q) return true;
+      const blob =
+        `${e.date} ${e.morningIn} ${e.morningOut} ${e.afternoonIn ?? ""} ${e.afternoonOut ?? ""} ${e.note ?? ""}`.toLowerCase();
       return blob.includes(q);
     });
-  }, [entries, query]);
+  }, [entries, query, month]);
 
   const totals = useMemo(() => {
     let minutes = 0;
@@ -55,13 +69,25 @@ export default function DTRTable({
       title="Daily Records"
       right={
         <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={onExportCsv} disabled={entries.length === 0}>
+          <Button
+            variant="secondary"
+            onClick={() => onExportCsv(filtered)}
+            disabled={filtered.length === 0}
+          >
             Export CSV
           </Button>
         </div>
       }
     >
       <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Select label="Month" value={month} onChange={(e) => setMonth(e.target.value)}>
+          <option value="all">All months</option>
+          {monthOptions.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </Select>
         <Input
           label="Search"
           placeholder="Filter by date, times, or note…"
@@ -92,12 +118,14 @@ export default function DTRTable({
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
-        <table className="min-w-[880px] w-full border-collapse bg-white text-sm dark:bg-slate-900">
+        <table className="min-w-[1080px] w-full border-collapse bg-white text-sm dark:bg-slate-900">
           <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-950 dark:text-slate-400">
             <tr>
               <th className="px-3 py-3 text-left">Date</th>
-              <th className="px-3 py-3 text-left">Time In</th>
-              <th className="px-3 py-3 text-left">Time Out</th>
+              <th className="px-3 py-3 text-left">Morning In</th>
+              <th className="px-3 py-3 text-left">Morning Out</th>
+              <th className="px-3 py-3 text-left">Afternoon In</th>
+              <th className="px-3 py-3 text-left">Afternoon Out</th>
               <th className="px-3 py-3 text-left">Total Hours</th>
               <th className="px-3 py-3 text-left">Overtime</th>
               <th className="px-3 py-3 text-left">Status</th>
@@ -108,7 +136,7 @@ export default function DTRTable({
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {filtered.length === 0 ? (
               <tr>
-                <td className="px-3 py-6 text-center text-sm text-slate-500" colSpan={8}>
+                <td className="px-3 py-6 text-center text-sm text-slate-500" colSpan={10}>
                   No records yet.
                 </td>
               </tr>
@@ -118,8 +146,10 @@ export default function DTRTable({
                 return (
                   <tr key={e.id} className="hover:bg-slate-50 dark:hover:bg-slate-950/50">
                     <td className="px-3 py-3 font-medium">{e.date}</td>
-                    <td className="px-3 py-3">{e.timeIn}</td>
-                    <td className="px-3 py-3">{e.timeOut}</td>
+                    <td className="px-3 py-3">{e.morningIn}</td>
+                    <td className="px-3 py-3">{e.morningOut}</td>
+                    <td className="px-3 py-3">{e.afternoonIn}</td>
+                    <td className="px-3 py-3">{e.afternoonOut}</td>
                     <td className="px-3 py-3">{formatHours(c.totalMinutes / 60)}</td>
                     <td className="px-3 py-3">{formatHours(c.overtimeMinutes / 60)}</td>
                     <td className="px-3 py-3">
@@ -136,8 +166,10 @@ export default function DTRTable({
                             setEditing({
                               id: e.id,
                               date: e.date,
-                              timeIn: e.timeIn,
-                              timeOut: e.timeOut,
+                              morningIn: e.morningIn,
+                              morningOut: e.morningOut,
+                              afternoonIn: e.afternoonIn,
+                              afternoonOut: e.afternoonOut,
                               note: e.note ?? "",
                             })
                           }
@@ -187,16 +219,20 @@ export default function DTRTable({
                 onChange={(e) => setEditing((d) => (d ? { ...d, date: e.target.value } : d))}
               />
               <Input
-                label="Time In"
+                label="Morning In"
                 type="time"
-                value={editing.timeIn}
-                onChange={(e) => setEditing((d) => (d ? { ...d, timeIn: e.target.value } : d))}
+                value={editing.morningIn}
+                onChange={(e) =>
+                  setEditing((d) => (d ? { ...d, morningIn: e.target.value } : d))
+                }
               />
               <Input
-                label="Time Out"
+                label="Morning Out"
                 type="time"
-                value={editing.timeOut}
-                onChange={(e) => setEditing((d) => (d ? { ...d, timeOut: e.target.value } : d))}
+                value={editing.morningOut}
+                onChange={(e) =>
+                  setEditing((d) => (d ? { ...d, morningOut: e.target.value } : d))
+                }
               />
               <Input
                 label="Note"
@@ -205,15 +241,51 @@ export default function DTRTable({
               />
             </div>
 
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-4">
+              <div className="hidden sm:block" />
+              <Input
+                label="Afternoon In"
+                type="time"
+                value={editing.afternoonIn}
+                onChange={(e) =>
+                  setEditing((d) => (d ? { ...d, afternoonIn: e.target.value } : d))
+                }
+              />
+              <Input
+                label="Afternoon Out"
+                type="time"
+                value={editing.afternoonOut}
+                onChange={(e) =>
+                  setEditing((d) => (d ? { ...d, afternoonOut: e.target.value } : d))
+                }
+              />
+              <div className="hidden sm:block" />
+            </div>
+
             <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button variant="secondary" onClick={() => setEditing(null)}>
                 Cancel
               </Button>
               <Button
                 onClick={() => {
-                  if (!editing.date || !editing.timeIn || !editing.timeOut) return;
-                  if (editing.timeOut <= editing.timeIn) {
-                    alert("Time out must be after time in.");
+                  if (
+                    !editing.date ||
+                    !editing.morningIn ||
+                    !editing.morningOut ||
+                    !editing.afternoonIn ||
+                    !editing.afternoonOut
+                  )
+                    return;
+                  if (editing.morningOut <= editing.morningIn) {
+                    alert("Morning time out must be after morning time in.");
+                    return;
+                  }
+                  if (editing.afternoonOut <= editing.afternoonIn) {
+                    alert("Afternoon time out must be after afternoon time in.");
+                    return;
+                  }
+                  if (editing.afternoonIn < editing.morningOut) {
+                    alert("Afternoon time in must be after morning time out.");
                     return;
                   }
                   const existingOtherDate = entries.some(
@@ -228,8 +300,10 @@ export default function DTRTable({
                   onUpdate({
                     ...current,
                     date: editing.date,
-                    timeIn: editing.timeIn,
-                    timeOut: editing.timeOut,
+                    morningIn: editing.morningIn,
+                    morningOut: editing.morningOut,
+                    afternoonIn: editing.afternoonIn,
+                    afternoonOut: editing.afternoonOut,
                     note: editing.note.trim() ? editing.note.trim() : undefined,
                     updatedAt: Date.now(),
                   });

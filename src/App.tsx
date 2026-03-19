@@ -63,8 +63,8 @@ export default function App() {
     setEntries((prev) => sortEntriesDesc(prev.map((e) => (e.id === next.id ? next : e))));
   }
 
-  function exportCsv() {
-    const csv = entriesToCsv(entries, settings);
+  function exportCsv(entriesToExport: DtrEntry[]) {
+    const csv = entriesToCsv(entriesToExport, settings);
     const filename = `OJT_DTR_${new Date().toISOString().slice(0, 10)}.csv`;
     downloadCsv(filename, csv);
   }

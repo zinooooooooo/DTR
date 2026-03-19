@@ -5,8 +5,10 @@ import { Card, Input, Button } from "./ui";
 
 type Draft = {
   date: string;
-  timeIn: string;
-  timeOut: string;
+  morningIn: string;
+  morningOut: string;
+  afternoonIn: string;
+  afternoonOut: string;
   note: string;
 };
 
@@ -21,18 +23,28 @@ export default function TimeLogForm({
 }) {
   const [draft, setDraft] = useState<Draft>({
     date: todayISO(),
-    timeIn: settings.schedule.startTime,
-    timeOut: settings.schedule.endTime,
+    morningIn: settings.schedule.morningStart,
+    morningOut: settings.schedule.morningEnd,
+    afternoonIn: settings.schedule.afternoonStart,
+    afternoonOut: settings.schedule.afternoonEnd,
     note: "",
   });
 
   const validation = useMemo(() => {
     const errors: string[] = [];
     if (!draft.date) errors.push("Pick a date.");
-    if (!draft.timeIn) errors.push("Enter time in.");
-    if (!draft.timeOut) errors.push("Enter time out.");
-    if (draft.timeIn && draft.timeOut && draft.timeOut <= draft.timeIn) {
-      errors.push("Time out must be after time in.");
+    if (!draft.morningIn) errors.push("Enter morning time in.");
+    if (!draft.morningOut) errors.push("Enter morning time out.");
+    if (!draft.afternoonIn) errors.push("Enter afternoon time in.");
+    if (!draft.afternoonOut) errors.push("Enter afternoon time out.");
+    if (draft.morningIn && draft.morningOut && draft.morningOut <= draft.morningIn) {
+      errors.push("Morning time out must be after morning time in.");
+    }
+    if (draft.afternoonIn && draft.afternoonOut && draft.afternoonOut <= draft.afternoonIn) {
+      errors.push("Afternoon time out must be after afternoon time in.");
+    }
+    if (draft.morningOut && draft.afternoonIn && draft.afternoonIn < draft.morningOut) {
+      errors.push("Afternoon time in must be after morning time out.");
     }
     if (existingDates.has(draft.date)) {
       errors.push("An entry for this date already exists (edit it instead).");
@@ -42,15 +54,17 @@ export default function TimeLogForm({
 
   return (
     <Card
-      title="Time In / Time Out"
+      title="Time Log (Morning / Afternoon)"
       right={
         <Button
           onClick={() => {
             if (!validation.ok) return;
             onAdd({
               date: draft.date,
-              timeIn: draft.timeIn,
-              timeOut: draft.timeOut,
+              morningIn: draft.morningIn,
+              morningOut: draft.morningOut,
+              afternoonIn: draft.afternoonIn,
+              afternoonOut: draft.afternoonOut,
               note: draft.note.trim() ? draft.note.trim() : undefined,
             });
           }}
@@ -60,7 +74,7 @@ export default function TimeLogForm({
         </Button>
       }
     >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-6">
         <Input
           label="Date"
           type="date"
@@ -68,16 +82,28 @@ export default function TimeLogForm({
           onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
         />
         <Input
-          label="Time In"
+          label="Morning In"
           type="time"
-          value={draft.timeIn}
-          onChange={(e) => setDraft((d) => ({ ...d, timeIn: e.target.value }))}
+          value={draft.morningIn}
+          onChange={(e) => setDraft((d) => ({ ...d, morningIn: e.target.value }))}
         />
         <Input
-          label="Time Out"
+          label="Morning Out"
           type="time"
-          value={draft.timeOut}
-          onChange={(e) => setDraft((d) => ({ ...d, timeOut: e.target.value }))}
+          value={draft.morningOut}
+          onChange={(e) => setDraft((d) => ({ ...d, morningOut: e.target.value }))}
+        />
+        <Input
+          label="Afternoon In"
+          type="time"
+          value={draft.afternoonIn}
+          onChange={(e) => setDraft((d) => ({ ...d, afternoonIn: e.target.value }))}
+        />
+        <Input
+          label="Afternoon Out"
+          type="time"
+          value={draft.afternoonOut}
+          onChange={(e) => setDraft((d) => ({ ...d, afternoonOut: e.target.value }))}
         />
         <Input
           label="Note (optional)"
@@ -99,7 +125,8 @@ export default function TimeLogForm({
         <p className="mt-3 text-xs text-slate-500">
           Official schedule:{" "}
           <span className="font-medium text-slate-700 dark:text-slate-200">
-            {settings.schedule.startTime} – {settings.schedule.endTime}
+            {settings.schedule.morningStart} – {settings.schedule.morningEnd} /{" "}
+            {settings.schedule.afternoonStart} – {settings.schedule.afternoonEnd}
           </span>
         </p>
       )}

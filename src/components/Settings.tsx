@@ -9,19 +9,23 @@ export default function Settings({
   settings: AppSettings;
   onSave: (next: AppSettings) => void;
 }) {
-  const [startTime, setStartTime] = useState(settings.schedule.startTime);
-  const [endTime, setEndTime] = useState(settings.schedule.endTime);
+  const [morningStart, setMorningStart] = useState(settings.schedule.morningStart);
+  const [morningEnd, setMorningEnd] = useState(settings.schedule.morningEnd);
+  const [afternoonStart, setAfternoonStart] = useState(settings.schedule.afternoonStart);
+  const [afternoonEnd, setAfternoonEnd] = useState(settings.schedule.afternoonEnd);
   const [requiredHours, setRequiredHours] = useState(String(settings.requiredOjtHours));
 
   const canSave = useMemo(() => {
     const req = Number(requiredHours);
     return (
-      startTime.length === 5 &&
-      endTime.length === 5 &&
+      morningStart.length === 5 &&
+      morningEnd.length === 5 &&
+      afternoonStart.length === 5 &&
+      afternoonEnd.length === 5 &&
       Number.isFinite(req) &&
       req > 0
     );
-  }, [startTime, endTime, requiredHours]);
+  }, [morningStart, morningEnd, afternoonStart, afternoonEnd, requiredHours]);
 
   return (
     <Card
@@ -32,7 +36,7 @@ export default function Settings({
             if (!canSave) return;
             onSave({
               ...settings,
-              schedule: { startTime, endTime },
+              schedule: { morningStart, morningEnd, afternoonStart, afternoonEnd },
               requiredOjtHours: Number(requiredHours),
             });
           }}
@@ -42,18 +46,30 @@ export default function Settings({
         </Button>
       }
     >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
         <Input
-          label="Official start time"
+          label="Morning start"
           type="time"
-          value={startTime}
-          onChange={(e) => setStartTime(e.target.value)}
+          value={morningStart}
+          onChange={(e) => setMorningStart(e.target.value)}
         />
         <Input
-          label="Official end time"
+          label="Morning end"
           type="time"
-          value={endTime}
-          onChange={(e) => setEndTime(e.target.value)}
+          value={morningEnd}
+          onChange={(e) => setMorningEnd(e.target.value)}
+        />
+        <Input
+          label="Afternoon start"
+          type="time"
+          value={afternoonStart}
+          onChange={(e) => setAfternoonStart(e.target.value)}
+        />
+        <Input
+          label="Afternoon end"
+          type="time"
+          value={afternoonEnd}
+          onChange={(e) => setAfternoonEnd(e.target.value)}
         />
         <Input
           label="Required OJT hours"

@@ -1,6 +1,8 @@
 export type WorkSchedule = {
-  startTime: string; // "HH:MM"
-  endTime: string; // "HH:MM"
+  morningStart: string; // "HH:MM"
+  morningEnd: string; // "HH:MM"
+  afternoonStart: string; // "HH:MM"
+  afternoonEnd: string; // "HH:MM"
 };
 
 export type AppSettings = {
@@ -12,8 +14,10 @@ export type AppSettings = {
 export type DtrEntry = {
   id: string;
   date: string; // "YYYY-MM-DD"
-  timeIn: string; // "HH:MM"
-  timeOut: string; // "HH:MM"
+  morningIn: string; // "HH:MM"
+  morningOut: string; // "HH:MM"
+  afternoonIn: string; // "HH:MM"
+  afternoonOut: string; // "HH:MM"
   note?: string;
   createdAt: number;
   updatedAt: number;
